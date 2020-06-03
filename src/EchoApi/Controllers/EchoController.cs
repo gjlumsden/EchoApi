@@ -1,5 +1,7 @@
-﻿using System.Runtime.InteropServices;
+﻿using System.Net;
+using System.Runtime.InteropServices;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.Infrastructure;
 
 namespace EchoApi.Controllers
 {
@@ -7,13 +9,26 @@ namespace EchoApi.Controllers
     [ApiController]
     public class EchoController : ControllerBase
     {
+        private readonly IActionContextAccessor accessor;
+
+        public EchoController(IActionContextAccessor accessor)
+        {
+            this.accessor = accessor;
+        }
+
         [HttpGet("{value}")]
         public EchoResponse Get(string value)
         {
             return new EchoResponse
             {
-                EchoValue = value
+                EchoValue = value,
+                CallerIpAddress = GetCallerIpAddress()
             };
+        }
+
+        private string GetCallerIpAddress()
+        {
+            return accessor.ActionContext.HttpContext.Connection.RemoteIpAddress.IsIPv4MappedToIPv6 ? accessor.ActionContext.HttpContext.Connection.RemoteIpAddress.MapToIPv4().ToString() : accessor.ActionContext.HttpContext.Connection.RemoteIpAddress.ToString();
         }
 
         [HttpPost]
@@ -21,7 +36,8 @@ namespace EchoApi.Controllers
         {
             return new EchoResponse
             {
-                EchoValue = value
+                EchoValue = value,
+                CallerIpAddress = GetCallerIpAddress()
             };
         }
     }
@@ -31,5 +47,6 @@ namespace EchoApi.Controllers
         public string EchoValue { get; set; }
         public string OsInformation => RuntimeInformation.OSDescription;
         public string OsArchitecture => RuntimeInformation.OSArchitecture.ToString();
+        public string CallerIpAddress { get; internal set; }
     }
 }
